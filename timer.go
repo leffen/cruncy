@@ -1,23 +1,28 @@
 package cruncy
 
-
 import (
   "time"
-  "log"
+  log "github.com/Sirupsen/logrus"
+  "fmt"
+  "github.com/satori/go.uuid"
 )
 
 type TimerData struct {
+  Title          string
+  Uuid           string
   StartTimeRun   time.Time
   StartTimeBatch time.Time
-  EndTimeRun      time.Time
+  EndTimeRun     time.Time
 
   BatchSize      int64
   PrevRows       int64
   Index          int64
 }
 
-func NewTimer() *TimerData {
+func NewTimer(title string) *TimerData {
   timer := &TimerData{}
+  timer.Title = title
+  timer.Uuid = uuid.NewV4().String()
   timer.StartTimeRun = time.Now()
   timer.StartTimeBatch = timer.StartTimeRun
   timer.PrevRows = 0
@@ -43,9 +48,16 @@ func (timer TimerData) TotalDuration() time.Duration {
 
 func (timer TimerData) ShowTotalDuration() {
   duration := timer.TotalDuration()
-  duration_sec := timer.TotalDuractionSeconds()
-  if duration_sec > 0 {
-    log.Printf("Total duration:, %v rows =%d row time=%d rows/sec ", duration, timer.Index, timer.Index / duration_sec )
+  ds := timer.TotalDuractionSeconds()
+  if ds > 0 {
+    msg := fmt.Sprintf("Total duration:, %v rows =%d row time=%d rows/sec ", duration, timer.Index, timer.Index / duration_sec)
+    log.WithFields(log.Fields{
+      "uuid": timer.Uuid,
+      "title": timer.Title,
+      "index": timer.Index,
+      "total_flow":   timer.Index / ds,
+      "State":   "stopped",
+    }).Info(msg)
   } else {
     log.Printf("Total duration:, %v rows =%d  SUPER FAST", duration, timer.Index)
 
@@ -59,11 +71,23 @@ func (timer *TimerData) ShowBatchTime() {
   var duration time.Duration = t1.Sub(timer.StartTimeBatch)
   var d2 time.Duration = timer.TotalDuration()
 
-  var ds int64 = int64(d2.Seconds())
+  ds := int64(d2.Seconds())
+  ds_batch := int64(duration.Seconds())
+
   if (ds > 0) {
-    log.Printf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", timer.Index, timer.Index / ds, duration,diff,diff/ds)
+    msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", timer.Index, timer.Index / ds, duration, diff, diff / ds_batch)
+    log.WithFields(log.Fields{
+      "uuid":         timer.Uuid,
+      "title":        timer.Title,
+      "index":        timer.Index,
+      "total_flow":   timer.Index / ds,
+      "batch_time":   duration,
+      "batch_size":   diff,
+      "batch_flow":   diff / ds_batch,
+      "State":        "in_batch",
+    }).Info(msg)
   } else {
-    log.Printf("%d rows - batch time %v \n", timer.Index,  duration)
+    log.Printf("%d rows - batch time %v \n", timer.Index, duration)
   }
   timer.PrevRows = timer.Index
   timer.StartTimeBatch = time.Now()
