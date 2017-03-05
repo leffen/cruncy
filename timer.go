@@ -4,7 +4,8 @@ import (
   "time"
   log "github.com/Sirupsen/logrus"
   "fmt"
-  "github.com/satori/go.uuid"
+  "github.com/renstrom/shortuuid"
+  "sync"
 )
 
 type TimerData struct {
@@ -17,15 +18,19 @@ type TimerData struct {
   BatchSize      int64
   PrevRows       int64
   Index          int64
+  ErrorCount     int64
+  mu        sync.RWMutex
+  muShow        sync.RWMutex
 }
 
 func NewTimer(title string) *TimerData {
   timer := &TimerData{}
   timer.Title = title
-  timer.Uuid = uuid.NewV4().String()
+  timer.Uuid = shortuuid.New()
   timer.StartTimeRun = time.Now()
   timer.StartTimeBatch = timer.StartTimeRun
   timer.PrevRows = 0
+  timer.ErrorCount = 0
   return timer
 }
 
@@ -50,7 +55,7 @@ func (timer TimerData) ShowTotalDuration() {
   duration := timer.TotalDuration()
   ds := timer.TotalDuractionSeconds()
   if ds > 0 {
-    msg := fmt.Sprintf("Total duration:, %v rows =%d row time=%d rows/sec ", duration, timer.Index, timer.Index / duration_sec)
+    msg := fmt.Sprintf("Total duration:, %v rows =%d row time=%d rows/sec ", duration, timer.Index, timer.Index / ds)
     log.WithFields(log.Fields{
       "uuid": timer.Uuid,
       "title": timer.Title,
@@ -65,6 +70,9 @@ func (timer TimerData) ShowTotalDuration() {
 }
 
 func (timer *TimerData) ShowBatchTime() {
+  timer.muShow.RLock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
+  defer timer.muShow.RUnlock()
+
   diff := timer.Index - timer.PrevRows
 
   t1 := time.Now()
@@ -74,7 +82,7 @@ func (timer *TimerData) ShowBatchTime() {
   ds := int64(d2.Seconds())
   ds_batch := int64(duration.Seconds())
 
-  if (ds > 0) {
+  if (ds > 0 && ds_batch > 0) {
     msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", timer.Index, timer.Index / ds, duration, diff, diff / ds_batch)
     log.WithFields(log.Fields{
       "uuid":         timer.Uuid,
@@ -95,6 +103,9 @@ func (timer *TimerData) ShowBatchTime() {
 }
 
 func (timer *TimerData) Tick() {
+  timer.mu.RLock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
+  defer timer.mu.RUnlock()
+
   timer.Index++
 
   if timer.Index % 100000 == 0 {
@@ -107,4 +118,7 @@ func (timer *TimerData) Stop() time.Time {
   return timer.EndTimeRun
 }
 
-
+func (timer *TimerData) IncError() int64{
+  timer.ErrorCount++
+  return timer.ErrorCount
+}
