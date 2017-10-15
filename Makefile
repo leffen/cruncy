@@ -1,6 +1,5 @@
 # Made by Leif Terje Fonnes, authumn 2017 for TV2
 # requires that bump version is installed	go get github.com/Shyp/bump_version
-#  and go get -u github.com/aktau/github-release
 
 
 .PHONY: test

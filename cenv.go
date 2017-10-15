@@ -44,3 +44,12 @@ func GetEnvIntUnlessFlagIsNotDefault(envVar string, defaultValue, flagValue, fla
 	}
 	return defaultValue
 }
+
+// GetEnvBoolOverrideFlag if environment flag is set to 1 it returns true
+func GetEnvBoolOverrideFlag(currValue bool, flagName string) bool {
+	if currValue {
+		return currValue
+	}
+
+	return os.Getenv(flagName) == "1"
+}
