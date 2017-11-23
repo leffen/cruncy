@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/renstrom/shortuuid"
+	log "github.com/sirupsen/logrus"
 )
 
 // TimerData containes run time data
