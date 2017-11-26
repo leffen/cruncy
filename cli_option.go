@@ -22,6 +22,11 @@ func NewCliOption(prefix string) *CliOption {
 	return &CliOption{v: v, f: f, prefix: prefix}
 }
 
+// Viper returns viper object
+func (c *CliOption) Viper() *viper.Viper {
+	return c.v
+}
+
 // ReadConfig reads and parses the config options set
 func (c *CliOption) ReadConfig() {
 	c.v.AutomaticEnv()
@@ -65,4 +70,19 @@ func (c *CliOption) MakeBool(key, short, envName string, defaultValue bool, desc
 
 	}
 	c.v.BindPFlag(key, c.f.Lookup(key))
+}
+
+// GetString returns string value for param
+func (c *CliOption) GetString(name string) string {
+	return c.v.GetString(name)
+}
+
+// GetInt returns int value for param
+func (c *CliOption) GetInt(name string) int {
+	return c.v.GetInt(name)
+}
+
+// GetBool returns bool value for param
+func (c *CliOption) GetBool(name string) bool {
+	return c.v.GetBool(name)
 }
