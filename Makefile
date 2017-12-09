@@ -8,7 +8,7 @@ bump:
 	bump_version patch cruncy.go 
 
 push: 
-	git push origin --tags
+	git push origin --tags -f
 
 release: test bump push
 
