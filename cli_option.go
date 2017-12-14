@@ -2,6 +2,7 @@ package cruncy
 
 import (
 	"os"
+	"strings"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -32,6 +33,20 @@ func (c *CliOption) ReadConfig() {
 	c.v.AutomaticEnv()
 	c.f.Parse(os.Args)
 	c.v.ReadInConfig()
+}
+
+// ReadTomlConfigFile reads config file from a given folder
+func (c *CliOption) ReadTomlConfigFile(configFolder, fileName string) error {
+	c.v.AutomaticEnv()
+	c.v.SetConfigType("toml")
+	c.v.AddConfigPath(".")
+	c.v.AddConfigPath(configFolder)
+	c.v.SetConfigName(strings.TrimSuffix(fileName, ".toml"))
+	err := c.v.ReadInConfig()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // MakeString creates a application string variable both for env and command line
