@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/renstrom/shortuuid"
+	"github.com/segmentio/ksuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,7 +29,7 @@ type TimerData struct {
 func NewTimer(title string) *TimerData {
 	timer := &TimerData{}
 	timer.Title = title
-	timer.Uuid = shortuuid.New()
+	timer.Uuid = ksuid.New().String()
 	timer.StartTimeRun = time.Now()
 	timer.StartTimeBatch = timer.StartTimeRun
 	timer.PrevRows = 0
