@@ -38,24 +38,27 @@ func NewTimer(title string) *TimerData {
 }
 
 // BatchDuractionSeconds returns durection in seconds
-func (timer TimerData) BatchDuractionSeconds() int64 {
+func (timer *TimerData) BatchDuractionSeconds() int64 {
 	t1 := time.Now()
 	var duration time.Duration = t1.Sub(timer.StartTimeBatch)
 	return int64(duration.Seconds())
 }
 
-func (timer TimerData) TotalDuractionSeconds() int64 {
+// TotalDuractionSeconds returns total duration in seconds
+func (timer *TimerData) TotalDuractionSeconds() int64 {
 	t1 := time.Now()
 	var duration time.Duration = t1.Sub(timer.StartTimeRun)
 	return int64(duration.Seconds())
 }
 
-func (timer TimerData) TotalDuration() time.Duration {
+// TotalDuration returns duration as a time.Duration
+func (timer *TimerData) TotalDuration() time.Duration {
 	t1 := time.Now()
 	return t1.Sub(timer.StartTimeRun)
 }
 
-func (timer TimerData) ShowTotalDuration() {
+// ShowTotalDuration outputs duration to log with fields
+func (timer *TimerData) ShowTotalDuration() {
 	duration := timer.TotalDuration()
 	ds := timer.TotalDuractionSeconds()
 	if ds > 0 {
@@ -63,22 +66,23 @@ func (timer TimerData) ShowTotalDuration() {
 		log.WithFields(log.Fields{
 			"uuid":       timer.Uuid,
 			"title":      timer.Title,
-			"index":      timer.Index,
-			"total_flow": timer.Index / ds,
+			"total_rows": timer.Index,
+			"avg_flow":   timer.Index / ds,
 			"State":      "stopped",
 		}).Info(msg)
 	} else {
 		log.WithFields(log.Fields{
 			"uuid":       timer.Uuid,
 			"title":      timer.Title,
-			"index":      timer.Index,
-			"total_flow": timer.Index,
+			"total_rows": timer.Index,
+			"avg_flow":   timer.Index,
 			"State":      "stopped",
 		}).Infof("Total duration:, %v rows =%d  SUPER FAST", duration, timer.Index)
 
 	}
 }
 
+// ShowBatchTime show averages to now
 func (timer *TimerData) ShowBatchTime() {
 	timer.muShow.RLock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
 	defer timer.muShow.RUnlock()
@@ -90,10 +94,10 @@ func (timer *TimerData) ShowBatchTime() {
 	var d2 time.Duration = timer.TotalDuration()
 
 	ds := int64(d2.Seconds())
-	ds_batch := int64(duration.Seconds())
+	dsBatch := int64(duration.Seconds())
 
-	if ds > 0 && ds_batch > 0 {
-		msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", timer.Index, timer.Index/ds, duration, diff, diff/ds_batch)
+	if ds > 0 && dsBatch > 0 {
+		msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", timer.Index, timer.Index/ds, duration, diff, diff/dsBatch)
 		log.WithFields(log.Fields{
 			"uuid":       timer.Uuid,
 			"title":      timer.Title,
@@ -101,7 +105,7 @@ func (timer *TimerData) ShowBatchTime() {
 			"total_flow": timer.Index / ds,
 			"batch_time": duration,
 			"batch_size": diff,
-			"batch_flow": diff / ds_batch,
+			"batch_flow": diff / dsBatch,
 			"State":      "in_batch",
 		}).Info(msg)
 	} else {
@@ -112,6 +116,7 @@ func (timer *TimerData) ShowBatchTime() {
 
 }
 
+// Tick increases tick with one
 func (timer *TimerData) Tick() {
 	timer.mu.RLock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
 	defer timer.mu.RUnlock()
@@ -123,11 +128,13 @@ func (timer *TimerData) Tick() {
 	}
 }
 
+// Stop stops the timer
 func (timer *TimerData) Stop() time.Time {
 	timer.EndTimeRun = time.Now()
 	return timer.EndTimeRun
 }
 
+// IncError adds one to number of errors
 func (timer *TimerData) IncError() int64 {
 	timer.ErrorCount++
 	return timer.ErrorCount
