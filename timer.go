@@ -10,6 +10,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// AtomicIntCounter uses an int64 internally.
+type AtomicIntCounter int64
+
+func (c *AtomicIntCounter) get() int64 {
+	return atomic.LoadInt64((*int64)(c))
+}
+
+func (c *AtomicIntCounter) inc() int64 {
+	return atomic.AddInt64((*int64)(c), 1)
+}
+
 // TimerData containes run time data
 type TimerData struct {
 	Title          string
@@ -20,10 +31,9 @@ type TimerData struct {
 
 	BatchSize  int64
 	PrevRows   int64
-	Index      int64
-	ErrorCount int64
+	Index      AtomicIntCounter
+	ErrorCount AtomicIntCounter
 	mu         sync.RWMutex
-	muShow     sync.RWMutex
 }
 
 // NewTimer creates a new timer struct
@@ -60,89 +70,99 @@ func (timer *TimerData) TotalDuration() time.Duration {
 
 // ShowTotalDuration outputs duration to log with fields
 func (timer *TimerData) ShowTotalDuration() {
-	timer.muShow.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
-	defer timer.muShow.Unlock()
 
-	duration := timer.TotalDuration()
-	ds := timer.TotalDuractionSeconds()
+	cnt := timer.Index.get()
+	timer.mu.RLock()
+	uuid := timer.Uuid
+	title := timer.Title
+	startTime := timer.StartTimeRun
+	timer.mu.RUnlock()
+
+	t1 := time.Now()
+	duration := t1.Sub(startTime)
+	ds := int64(duration.Seconds())
 	if ds > 0 {
-		msg := fmt.Sprintf("Total duration:, %v rows =%d row time=%d rows/sec ", duration, timer.Index, timer.Index/ds)
+		msg := fmt.Sprintf("Total duration:, %v rows =%d rate = %d rows/sec ", duration, cnt, cnt/ds)
 		log.WithFields(log.Fields{
-			"uuid":       timer.Uuid,
-			"title":      timer.Title,
-			"total_rows": timer.Index,
-			"avg_flow":   timer.Index / ds,
+			"uuid":       uuid,
+			"title":      title,
+			"total_rows": cnt,
+			"avg_flow":   cnt / ds,
 			"State":      "stopped",
 		}).Info(msg)
 	} else {
 		log.WithFields(log.Fields{
-			"uuid":       timer.Uuid,
-			"title":      timer.Title,
-			"total_rows": timer.Index,
-			"avg_flow":   timer.Index,
+			"uuid":       uuid,
+			"title":      title,
+			"total_rows": cnt,
+			"avg_flow":   cnt,
 			"State":      "stopped",
-		}).Infof("Total duration:, %v rows =%d  SUPER FAST", duration, timer.Index)
+		}).Infof("Total duration:, %v rows =%d  SUPER FAST", duration, cnt)
 
 	}
 }
 
 // ShowBatchTime show averages to now
 func (timer *TimerData) ShowBatchTime() {
-	timer.muShow.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
-	defer timer.muShow.Unlock()
 
-	diff := timer.Index - timer.PrevRows
+	cnt := timer.Index.get()
+	timer.mu.RLock()
+	uuid := timer.Uuid
+	title := timer.Title
+	prevRows := timer.PrevRows
+	startTime := timer.StartTimeBatch
+	timer.mu.RUnlock()
+
+	diff := cnt - prevRows
 
 	t1 := time.Now()
-	duration := t1.Sub(timer.StartTimeBatch)
+	duration := t1.Sub(startTime)
 	d2 := timer.TotalDuration()
 
 	ds := int64(d2.Seconds())
 	dsBatch := int64(duration.Seconds())
 
 	if ds > 0 && dsBatch > 0 {
-		msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", timer.Index, timer.Index/ds, duration, diff, diff/dsBatch)
+		msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", cnt, cnt/ds, duration, diff, diff/dsBatch)
 		log.WithFields(log.Fields{
-			"uuid":       timer.Uuid,
-			"title":      timer.Title,
-			"index":      timer.Index,
-			"total_flow": timer.Index / ds,
+			"uuid":       uuid,
+			"title":      title,
+			"index":      cnt,
+			"total_flow": cnt / ds,
 			"batch_time": duration,
 			"batch_size": diff,
 			"batch_flow": diff / dsBatch,
 			"State":      "in_batch",
 		}).Info(msg)
 	} else {
-		log.Printf("%d rows - batch time %v \n", timer.Index, duration)
+		log.Printf("%d rows - batch time %v \n", cnt, duration)
 	}
-	timer.PrevRows = timer.Index
-	timer.StartTimeBatch = time.Now()
 
+	timer.mu.Lock()
+	timer.PrevRows = cnt
+	timer.StartTimeBatch = time.Now()
+	timer.mu.Unlock()
 }
 
 // Tick increases tick with one
 func (timer *TimerData) Tick() {
-	timer.mu.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
-	defer timer.mu.Unlock()
+	cnt := timer.Index.inc()
 
-	atomic.AddInt64(&timer.Index, 1)
-
-	if timer.Index%100000 == 0 {
+	if cnt%100000 == 0 {
 		timer.ShowBatchTime()
 	}
 }
 
 // Stop stops the timer
 func (timer *TimerData) Stop() time.Time {
+	timer.mu.Lock()
 	timer.EndTimeRun = time.Now()
+	timer.mu.Unlock()
 	return timer.EndTimeRun
 }
 
 // IncError adds one to number of errors
 func (timer *TimerData) IncError() int64 {
-	timer.mu.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
-	defer timer.mu.Unlock()
-
-	timer.ErrorCount++
-	return timer.ErrorCount
+	timer.ErrorCount.inc()
+	return timer.ErrorCount.get()
 }
