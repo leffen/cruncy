@@ -13,7 +13,8 @@ import (
 // AtomicIntCounter uses an int64 internally.
 type AtomicIntCounter int64
 
-func (c *AtomicIntCounter) get() int64 {
+// Get returns current counter
+func (c *AtomicIntCounter) Get() int64 {
 	return atomic.LoadInt64((*int64)(c))
 }
 
@@ -71,7 +72,7 @@ func (timer *TimerData) TotalDuration() time.Duration {
 // ShowTotalDuration outputs duration to log with fields
 func (timer *TimerData) ShowTotalDuration() {
 
-	cnt := timer.Index.get()
+	cnt := timer.Index.Get()
 	timer.mu.RLock()
 	uuid := timer.Uuid
 	title := timer.Title
@@ -105,7 +106,7 @@ func (timer *TimerData) ShowTotalDuration() {
 // ShowBatchTime show averages to now
 func (timer *TimerData) ShowBatchTime() {
 
-	cnt := timer.Index.get()
+	cnt := timer.Index.Get()
 	timer.mu.RLock()
 	uuid := timer.Uuid
 	title := timer.Title
@@ -164,5 +165,5 @@ func (timer *TimerData) Stop() time.Time {
 // IncError adds one to number of errors
 func (timer *TimerData) IncError() int64 {
 	timer.ErrorCount.inc()
-	return timer.ErrorCount.get()
+	return timer.ErrorCount.Get()
 }
