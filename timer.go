@@ -60,6 +60,9 @@ func (timer *TimerData) TotalDuration() time.Duration {
 
 // ShowTotalDuration outputs duration to log with fields
 func (timer *TimerData) ShowTotalDuration() {
+	timer.muShow.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
+	defer timer.muShow.Unlock()
+
 	duration := timer.TotalDuration()
 	ds := timer.TotalDuractionSeconds()
 	if ds > 0 {
@@ -85,8 +88,8 @@ func (timer *TimerData) ShowTotalDuration() {
 
 // ShowBatchTime show averages to now
 func (timer *TimerData) ShowBatchTime() {
-	timer.muShow.RLock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
-	defer timer.muShow.RUnlock()
+	timer.muShow.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
+	defer timer.muShow.Unlock()
 
 	diff := timer.Index - timer.PrevRows
 
