@@ -3,6 +3,7 @@ package cruncy
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/segmentio/ksuid"
@@ -40,14 +41,14 @@ func NewTimer(title string) *TimerData {
 // BatchDuractionSeconds returns durection in seconds
 func (timer *TimerData) BatchDuractionSeconds() int64 {
 	t1 := time.Now()
-	var duration time.Duration = t1.Sub(timer.StartTimeBatch)
+	duration := t1.Sub(timer.StartTimeBatch)
 	return int64(duration.Seconds())
 }
 
 // TotalDuractionSeconds returns total duration in seconds
 func (timer *TimerData) TotalDuractionSeconds() int64 {
 	t1 := time.Now()
-	var duration time.Duration = t1.Sub(timer.StartTimeRun)
+	duration := t1.Sub(timer.StartTimeRun)
 	return int64(duration.Seconds())
 }
 
@@ -90,8 +91,8 @@ func (timer *TimerData) ShowBatchTime() {
 	diff := timer.Index - timer.PrevRows
 
 	t1 := time.Now()
-	var duration time.Duration = t1.Sub(timer.StartTimeBatch)
-	var d2 time.Duration = timer.TotalDuration()
+	duration := t1.Sub(timer.StartTimeBatch)
+	d2 := timer.TotalDuration()
 
 	ds := int64(d2.Seconds())
 	dsBatch := int64(duration.Seconds())
@@ -118,10 +119,10 @@ func (timer *TimerData) ShowBatchTime() {
 
 // Tick increases tick with one
 func (timer *TimerData) Tick() {
-	timer.mu.RLock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
-	defer timer.mu.RUnlock()
+	timer.mu.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
+	defer timer.mu.Unlock()
 
-	timer.Index++
+	atomic.AddInt64(&timer.Index, 1)
 
 	if timer.Index%100000 == 0 {
 		timer.ShowBatchTime()
@@ -136,6 +137,9 @@ func (timer *TimerData) Stop() time.Time {
 
 // IncError adds one to number of errors
 func (timer *TimerData) IncError() int64 {
+	timer.mu.Lock() // Claim the mutex as a RLock - allowing multiple go routines to log simultaneously
+	defer timer.mu.Unlock()
+
 	timer.ErrorCount++
 	return timer.ErrorCount
 }
