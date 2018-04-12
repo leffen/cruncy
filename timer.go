@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DataFields is map to interface def
+
 // AtomicIntCounter uses an int64 internally.
 type AtomicIntCounter int64
 
@@ -101,6 +103,34 @@ func (timer *TimerData) ShowTotalDuration() {
 		}).Infof("Total duration:, %v rows =%d  SUPER FAST", duration, cnt)
 
 	}
+}
+
+// LogFields returns summary data as fieldmap
+func (timer *TimerData) LogFields() log.Fields {
+	cnt := timer.Index.Get()
+	timer.mu.RLock()
+	uuid := timer.Uuid
+	title := timer.Title
+	startTime := timer.StartTimeRun
+	timer.mu.RUnlock()
+
+	t1 := time.Now()
+	duration := t1.Sub(startTime)
+	ds := int64(duration.Seconds())
+	avgFlow := cnt
+	if ds > 0 {
+		avgFlow = cnt / ds
+	}
+
+	return log.Fields{
+		"uuid":       uuid,
+		"title":      title,
+		"total_rows": cnt,
+		"avg_flow/s": avgFlow,
+		"start_time": startTime.UTC().Format("2006-01-02T15:04:05-0700"),
+		"end_time":   t1.UTC().Format("2006-01-02T15:04:05-0700"),
+	}
+
 }
 
 // ShowBatchTime show averages to now
