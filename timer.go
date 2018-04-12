@@ -37,6 +37,7 @@ type TimerData struct {
 	Index      AtomicIntCounter
 	ErrorCount AtomicIntCounter
 	mu         sync.RWMutex
+	Logger     *log.Entry
 }
 
 // NewTimer creates a new timer struct
@@ -48,6 +49,7 @@ func NewTimer(title string) *TimerData {
 	timer.StartTimeBatch = timer.StartTimeRun
 	timer.PrevRows = 0
 	timer.ErrorCount = 0
+	timer.Logger = log.WithFields(log.Fields{"uuid": timer.Uuid, "title": title})
 	return timer
 }
 
@@ -76,8 +78,6 @@ func (timer *TimerData) ShowTotalDuration() {
 
 	cnt := timer.Index.Get()
 	timer.mu.RLock()
-	uuid := timer.Uuid
-	title := timer.Title
 	startTime := timer.StartTimeRun
 	timer.mu.RUnlock()
 
@@ -86,17 +86,13 @@ func (timer *TimerData) ShowTotalDuration() {
 	ds := int64(duration.Seconds())
 	if ds > 0 {
 		msg := fmt.Sprintf("Total duration:, %v rows =%d rate = %d rows/sec ", duration, cnt, cnt/ds)
-		log.WithFields(log.Fields{
-			"uuid":       uuid,
-			"title":      title,
+		timer.Logger.WithFields(log.Fields{
 			"total_rows": cnt,
 			"avg_flow":   cnt / ds,
 			"State":      "stopped",
 		}).Info(msg)
 	} else {
-		log.WithFields(log.Fields{
-			"uuid":       uuid,
-			"title":      title,
+		timer.Logger.WithFields(log.Fields{
 			"total_rows": cnt,
 			"avg_flow":   cnt,
 			"State":      "stopped",
@@ -126,7 +122,8 @@ func (timer *TimerData) LogFields() log.Fields {
 		"uuid":       uuid,
 		"title":      title,
 		"total_rows": cnt,
-		"avg_flow/s": avgFlow,
+		"duration_s": ds,
+		"avg_flow_s": avgFlow,
 		"start_time": startTime.UTC().Format("2006-01-02T15:04:05-0700"),
 		"end_time":   t1.UTC().Format("2006-01-02T15:04:05-0700"),
 	}
@@ -138,8 +135,6 @@ func (timer *TimerData) ShowBatchTime() {
 
 	cnt := timer.Index.Get()
 	timer.mu.RLock()
-	uuid := timer.Uuid
-	title := timer.Title
 	prevRows := timer.PrevRows
 	startTime := timer.StartTimeBatch
 	timer.mu.RUnlock()
@@ -155,9 +150,7 @@ func (timer *TimerData) ShowBatchTime() {
 
 	if ds > 0 && dsBatch > 0 {
 		msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", cnt, cnt/ds, duration, diff, diff/dsBatch)
-		log.WithFields(log.Fields{
-			"uuid":       uuid,
-			"title":      title,
+		timer.Logger.WithFields(log.Fields{
 			"index":      cnt,
 			"total_flow": cnt / ds,
 			"batch_time": duration,
@@ -166,7 +159,7 @@ func (timer *TimerData) ShowBatchTime() {
 			"State":      "in_batch",
 		}).Info(msg)
 	} else {
-		log.Printf("%d rows - batch time %v \n", cnt, duration)
+		timer.Logger.Printf("%d rows - batch time %v \n", cnt, duration)
 	}
 
 	timer.mu.Lock()
