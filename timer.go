@@ -138,6 +138,7 @@ func (timer *TimerData) ShowBatchTime() {
 	timer.mu.RLock()
 	prevRows := timer.PrevRows
 	startTime := timer.StartTimeBatch
+	batchSize := timer.BatchSize
 	timer.mu.RUnlock()
 
 	diff := cnt - prevRows
@@ -148,9 +149,15 @@ func (timer *TimerData) ShowBatchTime() {
 
 	ds := int64(d2.Seconds())
 	dsBatch := int64(duration.Seconds())
+	unit := "s"
+	flow := float64(diff) / float64(dsBatch)
+	if batchSize < 1000 && flow < 1 && dsBatch > 0 {
+		unit = "m"
+		flow = float64(diff) / (float64(dsBatch) / 60.0)
+	}
 
 	if ds > 0 && dsBatch > 0 {
-		msg := fmt.Sprintf("%d rows avg flow %d/s - batch time %v batch size %d batch_flow %d \n", cnt, cnt/ds, duration, diff, diff/dsBatch)
+		msg := fmt.Sprintf("%d rows avg flow %d/%s - batch time %v batch size %d batch_flow %.4f \n", cnt, cnt/ds, unit, duration, diff, flow)
 		timer.Logger.WithFields(log.Fields{
 			"index":      cnt,
 			"total_flow": cnt / ds,
