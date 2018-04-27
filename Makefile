@@ -13,4 +13,4 @@ push:
 release: test bump push
 
 test:
-	go test ./... -v
+	go test ./... -v -cover -race

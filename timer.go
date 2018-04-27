@@ -42,15 +42,16 @@ type TimerData struct {
 
 // NewTimer creates a new timer struct
 func NewTimer(title string) *TimerData {
-	timer := &TimerData{}
-	timer.Title = title
-	timer.Uuid = ksuid.New().String()
-	timer.StartTimeRun = time.Now()
-	timer.StartTimeBatch = timer.StartTimeRun
-	timer.PrevRows = 0
-	timer.ErrorCount = 0
-	timer.Logger = log.WithFields(log.Fields{"uuid": timer.Uuid, "title": title})
-	return timer
+	nw := time.Now()
+	uuid := ksuid.New().String()
+	return &TimerData{
+		Title:          title,
+		Uuid:           uuid,
+		StartTimeRun:   nw,
+		StartTimeBatch: nw,
+		Logger:         log.WithFields(log.Fields{"uuid": uuid, "title": title}),
+		BatchSize:      100000,
+	}
 }
 
 // BatchDuractionSeconds returns durection in seconds
@@ -172,9 +173,18 @@ func (timer *TimerData) ShowBatchTime() {
 func (timer *TimerData) Tick() {
 	cnt := timer.Index.inc()
 
-	if cnt%100000 == 0 {
+	if cnt%timer.BatchSize == 0 {
 		timer.ShowBatchTime()
 	}
+}
+
+// Start the timer
+func (timer *TimerData) Start() {
+	nw := time.Now()
+	timer.mu.Lock()
+	timer.StartTimeRun = nw
+	timer.StartTimeBatch = nw
+	timer.mu.Unlock()
 }
 
 // Stop stops the timer
