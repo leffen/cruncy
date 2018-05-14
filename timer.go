@@ -157,7 +157,7 @@ func (timer *TimerData) ShowBatchTime() {
 	}
 
 	if ds > 0 && dsBatch > 0 {
-		msg := fmt.Sprintf("%d rows avg flow %d/%s - batch time %v batch size %d batch_flow %.4f \n", cnt, cnt/ds, unit, duration, diff, flow)
+		msg := fmt.Sprintf("%d rows avg flow %d/%s - batch time %v batch size %d batch_flow %.4f %s", cnt, cnt/ds, unit, duration, diff, flow, unit)
 		timer.Logger.WithFields(log.Fields{
 			"index":      cnt,
 			"total_flow": cnt / ds,
@@ -167,7 +167,7 @@ func (timer *TimerData) ShowBatchTime() {
 			"State":      "in_batch",
 		}).Info(msg)
 	} else {
-		timer.Logger.Printf("%d rows - batch time %v \n", cnt, duration)
+		timer.Logger.Printf("%d rows - batch time %v", cnt, duration)
 	}
 
 	timer.mu.Lock()
