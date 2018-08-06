@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"net/http"
 	"path/filepath"
 	"syscall"
 
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // EnsureFileSave creates directory unless exists for a given file
@@ -82,5 +85,48 @@ func DiskUsage(path string, checkSize uint64) float64 {
 	used := all - free - checkSize
 
 	return (float64(used) / float64(all)) * 100.0
+}
 
+// IsDirectory is path a directory
+func IsDirectory(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return fileInfo.IsDir()
+}
+
+// DeleteFile deletes a file
+func DeleteFile(fileName string) error {
+	err := os.Remove(fileName)
+	if err != nil {
+		return fmt.Errorf("unable to delete %s with error: %s", fileName, err)
+	}
+
+	return nil
+}
+
+// IsTextFile tells if a file is a text file
+func IsTextFile(fileName string) (bool, error) {
+	peekLen := 64
+
+	f, err := os.Open(fileName)
+	if err != nil {
+		return false, errors.Wrap(err, fmt.Sprintf("isTextFile Unable to open  %s with error %s", fileName, err))
+	}
+	defer f.Close()
+	b := make([]byte, peekLen)
+	_, err = f.Read(b)
+	if err != nil && err != io.EOF {
+		return false, errors.Wrap(err, fmt.Sprintf("isTextFile Unable to open  %s with error %s", fileName, err))
+	}
+	return IsTextData(b), nil
+}
+
+// IsTextData checks if a byte stream is text
+func IsTextData(data []byte) bool {
+	if len(data) == 0 {
+		return true
+	}
+	return strings.Contains(http.DetectContentType(data), "text/")
 }
