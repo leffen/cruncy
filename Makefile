@@ -1,4 +1,4 @@
-# Made by Leif Terje Fonnes, authumn 2017 for TV2
+# Made by Leif Terje Fonnes, authumn 2017 
 # requires that bump version is installed	go get github.com/Shyp/bump_version
 
 
