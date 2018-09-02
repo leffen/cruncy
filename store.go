@@ -5,19 +5,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 )
 
+// Store is db abstarction on top of bolt db
 type Store struct {
 	db    *bolt.DB
 	mutex sync.Mutex
 }
 
 var (
-	ErrNotFound = errors.New("ression: key not found")
-	ErrBadValue = errors.New("ression: bad value")
+	// ErrNotFound error key not found
+	ErrNotFound = errors.New("store: key not found")
+	// ErrBadValue error bad value
+	ErrBadValue = errors.New("store: bad value")
 )
 
+// Open a database file
 func Open(path string) (*Store, error) {
 	opts := &bolt.Options{
 		Timeout: 50 * time.Millisecond,
@@ -31,6 +35,7 @@ func Open(path string) (*Store, error) {
 	return &Store{db: db}, nil
 }
 
+// CreateBucket creates a buck
 func (store *Store) CreateBucket(bucket string) error {
 	return store.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucket))
@@ -38,10 +43,12 @@ func (store *Store) CreateBucket(bucket string) error {
 	})
 }
 
+// Close the database
 func (store *Store) Close() error {
 	return store.db.Close()
 }
 
+// Put a key/value into a given bucket
 func (store *Store) Put(bucket string, key string, value string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
@@ -51,6 +58,7 @@ func (store *Store) Put(bucket string, key string, value string) error {
 	})
 }
 
+// Get a key/value from a given bucket
 func (store *Store) Get(bucket, key string, value *string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
