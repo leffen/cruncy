@@ -106,6 +106,15 @@ func (store *Store) Delete(bucket string, key string) error {
 	})
 }
 
+// ForEach iterates over a given bucket
+func (store *Store) ForEach(bucket string, fn func(k, v []byte) error) error {
+	store.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		return b.ForEach(fn)
+	})
+	return nil
+}
+
 // ListBuckets lists all buckets
 func (store *Store) ListBuckets() ([]string, error) {
 	rc := []string{}
