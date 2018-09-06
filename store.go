@@ -167,14 +167,6 @@ func (store *Store) ListBucket(bucket string, filter func(k, v string) (bool, er
 	return rc, err
 }
 
-// ForEach iterates over every key and value in a bucket
-func (store *Store) ForEach(bucket string, filter func(k, v []byte) error) error {
-	return store.db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(bucket))
-		return b.ForEach(filter)
-	})
-}
-
 // GetDB returns pointer to underlaying DB.
 func (store *Store) GetDB() *bolt.DB {
 	return store.db
