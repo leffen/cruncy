@@ -88,8 +88,17 @@ func (store *Store) Delete(bucket string, key string) error {
 		c := tx.Bucket([]byte(bucket)).Cursor()
 		if k, _ := c.Seek([]byte(key)); k == nil || string(k) != key {
 			return ErrNotFound
-		} else {
-			return c.Delete()
 		}
+		return c.Delete()
+
 	})
+}
+
+// ForEach iterates over a given bucket
+func (store *Store) ForEach(bucket string, fn func(k, v []byte) error) error {
+	store.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		return b.ForEach(fn)
+	})
+	return nil
 }
