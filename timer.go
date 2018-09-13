@@ -185,6 +185,17 @@ func (timer *TimerData) Tick() {
 	}
 }
 
+// TickBatch increases tick with one
+func (timer *TimerData) TickBatch(cnt int) {
+	for i := 0; i < cnt; i++ {
+		cnt := timer.Index.inc()
+
+		if cnt%timer.BatchSize == 0 {
+			timer.ShowBatchTime()
+		}
+	}
+}
+
 // Start the timer
 func (timer *TimerData) Start() {
 	nw := time.Now()
