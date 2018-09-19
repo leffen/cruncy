@@ -2,6 +2,7 @@ package cruncy
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
@@ -60,19 +61,23 @@ func (store *Store) Put(bucket string, key string, value string) error {
 
 // Get a key/value from a given bucket
 func (store *Store) Get(bucket, key string, value *string) error {
+	if value == nil {
+		return fmt.Errorf("store.Get requires pointer to a string. Param must be given")
+	}
+
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
 	return store.db.View(func(tx *bolt.Tx) error {
+
 		c := tx.Bucket([]byte(bucket)).Cursor()
-		if k, v := c.Seek([]byte(key)); k == nil || string(k) != key {
+		k, v := c.Seek([]byte(key))
+		if k == nil || string(k) != key {
 			return ErrNotFound
-		} else if value == nil {
-			return nil
-		} else {
-			*value = string(v[:])
-			return nil
 		}
+		*value = string(v[:])
+		return nil
+
 	})
 }
 
@@ -88,8 +93,25 @@ func (store *Store) Delete(bucket string, key string) error {
 		c := tx.Bucket([]byte(bucket)).Cursor()
 		if k, _ := c.Seek([]byte(key)); k == nil || string(k) != key {
 			return ErrNotFound
-		} else {
-			return c.Delete()
 		}
+		return c.Delete()
+
 	})
+}
+
+// ListBuckets lists all buckets
+func (store *Store) ListBuckets() ([]string, error) {
+	rc := []string{}
+
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+
+	err := store.db.View(func(tx *bolt.Tx) error {
+		return tx.ForEach(func(name []byte, _ *bolt.Bucket) error {
+			rc = append(rc, string(name))
+			return nil
+		})
+	})
+
+	return rc, err
 }
