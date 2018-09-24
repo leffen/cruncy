@@ -115,3 +115,40 @@ func (store *Store) ListBuckets() ([]string, error) {
 
 	return rc, err
 }
+
+// ListBucket lists all buckets
+func (store *Store) ListBucket(bucket string, filter func(k, v string) (bool, error)) ([]string, error) {
+	rc := []string{}
+
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+
+	err := store.db.View(func(tx *bolt.Tx) error {
+
+		b := tx.Bucket([]byte(bucket))
+
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			add := true
+			var err error
+			if filter != nil {
+				add, err = filter(string(k), string(v))
+				if err != nil {
+					return err
+				}
+			}
+			if add {
+				rc = append(rc, string(k))
+			}
+		}
+		return nil
+	})
+
+	return rc, err
+}
+
+// GetDB returns pointer to underlaying DB.
+func (store *Store) GetDB() *bolt.DB {
+	return store.db
+}
