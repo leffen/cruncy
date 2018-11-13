@@ -69,8 +69,11 @@ func (store *Store) Get(bucket, key string, value *string) error {
 	defer store.mutex.Unlock()
 
 	return store.db.View(func(tx *bolt.Tx) error {
-
-		c := tx.Bucket([]byte(bucket)).Cursor()
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return ErrNotFound
+		}
+		c := b.Cursor()
 		k, v := c.Seek([]byte(key))
 		if k == nil || string(k) != key {
 			return ErrNotFound
@@ -90,7 +93,11 @@ func (store *Store) Delete(bucket string, key string) error {
 	defer store.mutex.Unlock()
 
 	return store.db.Update(func(tx *bolt.Tx) error {
-		c := tx.Bucket([]byte(bucket)).Cursor()
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return ErrNotFound
+		}
+		c := b.Cursor()
 		if k, _ := c.Seek([]byte(key)); k == nil || string(k) != key {
 			return ErrNotFound
 		}
@@ -126,6 +133,9 @@ func (store *Store) ListBucket(bucket string, filter func(k, v string) (bool, er
 	err := store.db.View(func(tx *bolt.Tx) error {
 
 		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return ErrNotFound
+		}
 
 		c := b.Cursor()
 
