@@ -30,3 +30,18 @@ func TestTimer(t *testing.T) {
 	x := tmr.TotalDuration()
 	assert.True(t, x.Seconds() < float64(1.0))
 }
+
+func BenchmarkTimer(b *testing.B) {
+	tmr := NewTimer("test2")
+	tmr.Start()
+	testRounds := int64(1000000)
+	tmr.BatchSize = testRounds * int64(b.N)
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		for i := int64(0); i < testRounds; i++ {
+			tmr.Tick()
+		}
+	}
+	tmr.Stop()
+
+}
