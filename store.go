@@ -110,6 +110,9 @@ func (store *Store) Delete(bucket string, key string) error {
 func (store *Store) ForEach(bucket string, fn func(k, v []byte) error) error {
 	store.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return fmt.Errorf("No bucket found")
+		}
 		return b.ForEach(fn)
 	})
 	return nil
