@@ -1,6 +1,6 @@
 # Simple to use go rutines often based on other code found on github
 
-0.10.4  Added setif env operators
+0.10.7  Added setif env operators
 0.10.3  Added back foreach
 0.10.2  Added list bucket
 0.10.1  Adding list buckets
