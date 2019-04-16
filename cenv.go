@@ -3,6 +3,7 @@ package cruncy
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 // GetEnvUnlessFlagIsNotDefault Getting String env variable unless flagvalue differs from defaultvalue
@@ -52,4 +53,37 @@ func GetEnvBoolOverrideFlag(currValue bool, flagName string) bool {
 	}
 
 	return os.Getenv(flagName) == "1"
+}
+
+// EnvSetIfSet updates variable with value if os env exists
+func EnvSetIfSet(name string, value *string) {
+	val := os.Getenv(name)
+	if val != "" {
+		*value = val
+	}
+}
+
+// EnvSetIntIfSet updates int variable if environment variable exists
+func EnvSetIntIfSet(name string, value *int64) {
+	val := os.Getenv(name)
+	if val != "" {
+		i, err := strconv.ParseInt(val, 10, 64)
+		if err != nil {
+			return
+		}
+		*value = int64(i)
+	}
+}
+
+// EnvSetBoolIfSet sets boolean variable if environment variable is set and contains a valid entry
+func EnvSetBoolIfSet(name string, value *bool) {
+	val := os.Getenv(name)
+	if val != "" {
+		switch strings.ToUpper(val) {
+		case "0", "FALSE", "F":
+			*value = false
+		case "1", "TRUE", "T":
+			*value = true
+		}
+	}
 }
