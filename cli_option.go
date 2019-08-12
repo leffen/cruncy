@@ -35,7 +35,11 @@ func (c *CliOption) ReadConfig() error {
 	if err != nil {
 		return err
 	}
-	return c.v.ReadInConfig()
+	err = c.v.ReadInConfig()
+	if !strings.Contains(err.Error(), "Not Found in \"[]\"") {
+		return err
+	}
+	return nil
 }
 
 // ReadTomlConfigFile reads config file from a given folder
