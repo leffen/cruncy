@@ -29,10 +29,13 @@ func (c *CliOption) Viper() *viper.Viper {
 }
 
 // ReadConfig reads and parses the config options set
-func (c *CliOption) ReadConfig() {
+func (c *CliOption) ReadConfig() error {
 	c.v.AutomaticEnv()
-	c.f.Parse(os.Args)
-	c.v.ReadInConfig()
+	err := c.f.Parse(os.Args)
+	if err != nil {
+		return err
+	}
+	return c.v.ReadInConfig()
 }
 
 // ReadTomlConfigFile reads config file from a given folder

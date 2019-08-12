@@ -1,5 +1,6 @@
 # Simple to use go rutines often based on other code found on github
 
+0.11.1  Added error returns to CliOption.ReadConfig
 0.10.7  Added setif env operators
 0.10.3  Added back foreach
 0.10.2  Added list bucket
