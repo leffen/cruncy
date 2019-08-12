@@ -1,4 +1,4 @@
-module leffen/cruncy
+module github.com/leffen/cruncy
 
 go 1.12
 
