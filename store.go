@@ -38,6 +38,14 @@ func Open(path string) (*Store, error) {
 
 // CreateBucket creates a buck
 func (store *Store) CreateBucket(bucket string) error {
+	if store == nil {
+		return fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return fmt.Errorf("Missing store db object")
+	}
+
 	return store.db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists([]byte(bucket))
 		return err
@@ -46,11 +54,27 @@ func (store *Store) CreateBucket(bucket string) error {
 
 // Close the database
 func (store *Store) Close() error {
+	if store == nil {
+		return fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return fmt.Errorf("Missing store db object")
+	}
+
 	return store.db.Close()
 }
 
 // Put a key/value into a given bucket
 func (store *Store) Put(bucket string, key string, value string) error {
+	if store == nil {
+		return fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return fmt.Errorf("Missing store db object")
+	}
+
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
@@ -63,6 +87,13 @@ func (store *Store) Put(bucket string, key string, value string) error {
 func (store *Store) Get(bucket, key string, value *string) error {
 	if value == nil {
 		return fmt.Errorf("store.Get requires pointer to a string. Param must be given")
+	}
+	if store == nil {
+		return fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return fmt.Errorf("Missing store db object")
 	}
 
 	store.mutex.Lock()
@@ -89,6 +120,14 @@ func (store *Store) Get(bucket, key string, value *string) error {
 //
 //	store.Delete("key42")
 func (store *Store) Delete(bucket string, key string) error {
+	if store == nil {
+		return fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return fmt.Errorf("Missing store db object")
+	}
+
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 
@@ -108,6 +147,14 @@ func (store *Store) Delete(bucket string, key string) error {
 
 // ForEach iterates over a given bucket
 func (store *Store) ForEach(bucket string, fn func(k, v []byte) error) error {
+	if store == nil {
+		return fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return fmt.Errorf("Missing store db object")
+	}
+
 	store.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(bucket))
 		if b == nil {
@@ -120,6 +167,14 @@ func (store *Store) ForEach(bucket string, fn func(k, v []byte) error) error {
 
 // ListBuckets lists all buckets
 func (store *Store) ListBuckets() ([]string, error) {
+	if store == nil {
+		return nil, fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return nil, fmt.Errorf("Missing store db object")
+	}
+
 	rc := []string{}
 
 	store.mutex.Lock()
@@ -137,6 +192,14 @@ func (store *Store) ListBuckets() ([]string, error) {
 
 // ListBucket lists all buckets
 func (store *Store) ListBucket(bucket string, filter func(k, v string) (bool, error)) ([]string, error) {
+	if store == nil {
+		return nil, fmt.Errorf("Missing store object")
+	}
+
+	if store.db == nil {
+		return nil, fmt.Errorf("Missing store db object")
+	}
+
 	rc := []string{}
 
 	store.mutex.Lock()
