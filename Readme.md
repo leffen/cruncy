@@ -35,5 +35,4 @@ This is a collection of the most often used go rutines in my commandline applica
 
 * Author: leffen
 * Date: 2017 and onward
-* Licence: Check LICENCE file
-* Licence II: Check underlying libraries. No guarantees given here.
+* Licence: Check LICENSE AND NOTICE.txt file
