@@ -1,7 +1,10 @@
-# Simple to use go rutines often based on other code found on github
+# Simple to use go rutines
+
+This is a collection of the most often used go rutines in my commandline applications and micro services.
 
 ## Changelog
 
+* 0.12.3  Added Lincence dependencies and information
 * 0.11.1  Added error returns to CliOption.ReadConfig
 * 0.10.7  Added setif env operators
 * 0.10.3  Added back foreach
