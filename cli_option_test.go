@@ -22,7 +22,8 @@ func TestBoolEnv(t *testing.T) {
 
 	o := NewCliOption("test")
 	o.MakeBool("sync_up", "u", "SYNC_UP", false, "Sync directory up to S3")
-	o.ReadConfig()
+	err := o.ReadConfig()
+	assert.Nil(t, err)
 
 	assert.Equal(t, true, o.GetBool("sync_up"))
 }
