@@ -36,7 +36,7 @@ func (c *CliOption) ReadConfig() error {
 		return err
 	}
 	err = c.v.ReadInConfig()
-	if !strings.Contains(err.Error(), "Not Found in \"[]\"") {
+	if err != nil && !strings.Contains(err.Error(), "Not Found in \"[]\"") {
 		return err
 	}
 	return nil
