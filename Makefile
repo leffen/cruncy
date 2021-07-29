@@ -10,6 +10,8 @@ deps:
 
 bump:
 	bump_version patch cruncy.go
+	git add cruncy.go
+	git commit -m "Updated version"
 
 push:
 	git push origin --tags -f
