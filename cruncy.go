@@ -1,4 +1,4 @@
 package cruncy
 
 // VERSION of the application
-const VERSION = "0.14.2"
+const VERSION = "0.14.3"
