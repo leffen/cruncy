@@ -2,7 +2,7 @@
 # requires that bump version is installed	go get github.com/Shyp/bump_version
 
 
-.PHONY: test
+.PHONY: test license
 
 deps:
 	go get go.elastic.co/go-licence-detector
